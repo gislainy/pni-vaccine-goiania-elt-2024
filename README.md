@@ -23,32 +23,38 @@ This repository contains scripts and documentation for the extraction, transform
 
 ---
 
-## 🧩 ELT Pipeline Structure
+### ⚙️ Data Processing Pipeline (ETL Scripts)
 
-### Extract
-- Download raw datasets (Jan–Dec) from OpenDataSUS
+This project includes a set of three JavaScript scripts designed to execute the ETL (Extract, Transform, Load) process over the raw vaccination data files obtained from OpenDataSUS. The primary goal is to filter, normalize, and optimize the dataset for analytical use in dashboards.
 
-### Transform
-- Select relevant columns:
-```javascript
-const columnsKeep = [
-    "co_documento",
-    "tp_sexo_paciente",
-    "no_fantasia_estalecimento",
-    "co_vacina",
-    "sg_vacina",
-    "ds_vacina_fabricante",
-    "ds_estrategia_vacinacao",
-    "ds_natureza_estabelecimento",
-    "nu_idade_paciente",
-    "faixa_etaria",
-    "mes_vacina",
-    "mes_vacina_num",
-]
-```
-- Add derived columns:
-  - `faixa_etaria`, `mes_vacina`, `mes_vacina_num`
-- Normalize large text fields and format dates
+#### `01_step.js` – Filtering and Transformation (Per-Month)
+
+This script performs the initial transformation step by reading each monthly CSV file line by line to minimize memory usage. It:
+
+- Filters the dataset to include only records from the municipality of **Goiânia (code: 520870)**.
+- Selects a predefined set of relevant columns (e.g., patient sex, vaccine code, establishment type).
+- Formats and normalizes fields such as dates and creates derived variables like `faixa_etaria` (age group).
+- Outputs a cleaned and structured CSV file for each month.
+
+#### `02_step.js` – File Consolidation
+
+This script merges all the monthly files generated in `01_step.js` into a single dataset. Key features include:
+
+- Iterates through each monthly output file.
+- Appends the contents to a single CSV file, ensuring that only the first file contributes the header row.
+- Produces a unified dataset (`vacinacao_2024.csv`) containing all vaccination records for the year 2024 in Goiânia.
+
+#### `03_step.js` – Final Optimization and Export
+
+This final script applies post-processing and optimizations to prepare the dataset for dashboard consumption:
+
+- Re-applies a filter to ensure only Goiânia records are present.
+- Converts the UUID-based patient identifier (`co_documento`) into a numeric ID for size reduction and privacy.
+- Creates helper variables such as `mes_vacina_num` (numerical month) to facilitate chronological sorting in dashboards.
+- Outputs the final reduced dataset as `vacinacao_2024_goiania.csv`, ready to be uploaded to Google Sheets or a BI tool.
+
+> Together, these three steps reduce the original dataset (~60 GB across 12 files) to a lightweight and analysis-ready file of under 90 MB, suitable for visualization in tools like Google Looker Studio.
+
 
 ### Load
 - Combine all monthly files into a single CSV
